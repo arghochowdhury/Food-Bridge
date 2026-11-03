@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}My menu{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h2>{{ restaurant.name }}</h2><p class="muted">{{ restaurant.location_text }}</p></div>
+  <a class="btn" href="{% url 'food_add' %}">Add food item</a>
+</div>
+<div class="stats-row">
+  <div class="glass stat"><b>{{ n_items }}</b><span>items on menu</span></div>
+  <div class="glass stat"><b>{{ n_pending }}</b><span>orders waiting for you</span></div>
+  <div class="glass stat"><b>{{ n_confirmed }}</b><span>orders confirmed</span></div>
+</div>
+
+<h3>Your menu</h3>
+{% if items %}
+<div class="grid">
+  {% for f in items %}
+  <article class="card glass {% if not f.is_active %}off{% endif %}">
+    <div class="thumb">{% if f.image %}<img src="{{ f.image.url }}" alt="{{ f.name }}">{% else %}<span>{{ f.name|slice:":1" }}</span>{% endif %}</div>
+    <div class="card-body">
+      <h4>{{ f.name }}</h4>
+      <p class="muted">{{ f.description|default:"No description" }}</p>
+      <div class="meta"><span class="badge q-{{ f.quality }}">{{ f.get_quality_display }}</span>
+        <span class="price">&#2547;{{ f.price }}</span></div>
+      <div class="meta"><span class="stock {% if f.quantity < 10 %}low{% endif %}">{{ f.quantity }} in stock</span>
+        {% if not f.is_active %}<span class="muted">Hidden</span>{% endif %}</div>
+      <div class="meta">
+        <a class="btn ghost small" href="{% url 'food_edit' f.pk %}">Edit</a>
+        <form method="post" action="{% url 'food_delete' f.pk %}" onsubmit="return confirm('Delete {{ f.name|escapejs }}?')">{% csrf_token %}<button class="btn danger small">Delete</button></form>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}<p class="empty">Your menu is empty. Add the first dish so halls can find you.</p>{% endif %}
+
+<h3>Recent orders</h3>
+{% include "_orders_table.html" with orders=recent_orders %}
+{% endblock %}

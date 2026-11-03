@@ -1,0 +1,15 @@
+<div class="loc-grid" id="loc" data-api="{% url 'api_locations' %}">
+  <div class="field"><label for="id_division">Division</label>
+    <select name="division" id="id_division" data-selected="{{ sel.division }}" {% if loc_required %}required{% endif %}>
+      <option value="">Select division</option>
+      {% for d in divisions %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+    </select></div>
+  <div class="field"><label for="id_district">District</label>
+    <select name="district" id="id_district" data-selected="{{ sel.district }}" disabled {% if loc_required %}required{% endif %}><option value="">Select district</option></select></div>
+  <div class="field"><label for="id_upazila">Upazila</label>
+    <select name="upazila" id="id_upazila" data-selected="{{ sel.upazila }}" disabled {% if loc_required %}required{% endif %}><option value="">Select upazila</option></select></div>
+  <div class="field"><label for="id_thana">Thana</label>
+    <select name="thana" id="id_thana" data-selected="{{ sel.thana }}" disabled {% if loc_required %}required{% endif %}><option value="">Select thana</option></select></div>
+  <div class="field"><label for="id_post_office">Post office</label>
+    <select name="post_office" id="id_post_office" data-selected="{{ sel.post_office }}" disabled {% if loc_required %}required{% endif %}><option value="">Select post office</option></select></div>
+</div>

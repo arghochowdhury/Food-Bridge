@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="page-head"><h2>Alerts</h2></div>
+{% for n in items %}
+  <a class="glass note {% if not n.is_read %}new{% endif %}" href="{% if n.order_id %}{% url 'order_detail' n.order_id %}{% else %}#{% endif %}">
+    <span>{{ n.message }}</span><small class="muted">{{ n.created_at|date:"d M, H:i" }}</small></a>
+{% empty %}<p class="empty">Nothing new. Alerts about your orders show up here.</p>{% endfor %}
+{% endblock %}

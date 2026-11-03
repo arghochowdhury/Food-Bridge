@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1>Kitchens with food.<br>Halls with guests.<br>One bridge between them.</h1>
+    <p class="lead">Restaurants list what they have in stock. Convention halls and NGOs find the closest kitchen, order by the number of guests, and get a confirmed bill they can download.</p>
+    <div class="cta">
+      {% if user.is_authenticated %}
+        <a class="btn" href="{% url 'dashboard' %}">Open my dashboard</a>
+      {% else %}
+        <a class="btn" href="{% url 'register' %}">Create a free account</a>
+        <a class="btn ghost" href="{% url 'login' %}">I already have one</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="hero-card glass">
+    <h3>Right now on Food Bridge</h3>
+    <div class="stats">
+      <div><b>{{ n_restaurants }}</b><span>restaurants listing stock</span></div>
+      <div><b>{{ n_halls }}</b><span>halls and organisations</span></div>
+      <div><b>{{ n_orders }}</b><span>orders confirmed</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <article class="glass"><h3>Restaurants</h3><p>Add each dish with its price, quality, quantity in stock and a photo. Stock goes down automatically when you confirm an order.</p></article>
+  <article class="glass"><h3>Halls and NGOs</h3><p>Pick your division, district, upazila, thana and post office. We show restaurants nearby that still have stock.</p></article>
+  <article class="glass"><h3>Orders and bills</h3><p>Choose items per person, see the total before you send, and download a PDF bill once the restaurant confirms.</p></article>
+</section>
+{% endblock %}

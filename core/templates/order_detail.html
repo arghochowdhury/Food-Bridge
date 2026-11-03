@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.pk }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2>Order #{{ order.pk }} <span class="badge {{ order.status }}">{{ order.get_status_display }}</span></h2>
+  <p class="muted">Placed {{ order.created_at|date:"d M Y, H:i" }}</p></div>
+  <a class="btn ghost" href="{% url 'order_list' %}">All orders</a></div>
+
+<div class="two-col">
+  <div class="glass pad"><h4>Convention hall</h4><p><b>{{ order.hall.name }}</b><br>{{ order.hall.location_text }}</p>
+    <p>Guests: <b>{{ order.guests }}</b><br>Event date: <b>{{ order.event_date|date:"d M Y" }}</b></p>
+    {% if order.note %}<p class="muted">Note: {{ order.note }}</p>{% endif %}</div>
+  <div class="glass pad"><h4>Restaurant</h4><p><b>{{ order.restaurant.name }}</b><br>{{ order.restaurant.location_text }}</p>
+    {% if order.restaurant.phone %}<p>Phone: {{ order.restaurant.phone }}</p>{% endif %}</div>
+</div>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Item</th><th>Per person</th><th>Total qty</th><th>Unit price</th><th>Amount</th></tr></thead>
+  <tbody>{% for i in items %}<tr><td>{{ i.name }}</td><td>{{ i.per_person }}</td><td>{{ i.total_qty }}</td><td>&#2547;{{ i.unit_price }}</td><td>&#2547;{{ i.line_total|floatformat:2 }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><td colspan="4">Grand total</td><td><b>&#2547;{{ order.total|floatformat:2 }}</b></td></tr></tfoot>
+</table></div>
+
+<div class="actions">
+{% if user.role == 'restaurant' and order.status == 'pending' %}
+  <form method="post" action="{% url 'order_action' order.pk 'confirm' %}">{% csrf_token %}<button class="btn">Confirm order (stock is available)</button></form>
+  <form method="post" action="{% url 'order_action' order.pk 'reject' %}">{% csrf_token %}<button class="btn danger">Reject order</button></form>
+{% elif user.role == 'hall' and order.status == 'confirmed' %}
+  <a class="btn" href="{% url 'order_pdf' order.pk %}">Download bill (PDF)</a>
+{% elif user.role == 'hall' and order.status == 'pending' %}
+  <p class="muted">Waiting for {{ order.restaurant.name }} to confirm. You will get an alert.</p>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="auth glass">
+  <h2>{{ title }}</h2>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% for field in form %}
+      {% if field.name == 'is_active' %}
+        <label class="check">{{ field }} {{ field.label }}</label>
+      {% else %}{% include "_field.html" with field=field %}{% endif %}
+    {% endfor %}
+    <button class="btn block">Save food item</button>
+    <a class="btn ghost block" href="{% url 'restaurant_dashboard' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

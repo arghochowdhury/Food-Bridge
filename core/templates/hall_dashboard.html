@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h2>{{ hall.name }}</h2><p class="muted">{{ hall.location_text }}</p></div>
+  <a class="btn" href="{% url 'find_restaurants' %}">Find food near me</a>
+</div>
+<div class="stats-row">
+  <div class="glass stat"><b>{{ n_total }}</b><span>orders placed</span></div>
+  <div class="glass stat"><b>{{ n_pending }}</b><span>waiting for a restaurant</span></div>
+  <div class="glass stat"><b>{{ n_confirmed }}</b><span>confirmed, bill ready</span></div>
+</div>
+<h3>Recent orders</h3>
+{% include "_orders_table.html" with orders=recent_orders %}
+{% endblock %}

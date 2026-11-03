@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Order from {{ restaurant.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2>{{ restaurant.name }}</h2><p class="muted">{{ restaurant.location_text }}</p></div>
+  <a class="btn ghost" href="{% url 'find_restaurants' %}">Back to search</a></div>
+{% if foods %}
+<form method="post" id="orderForm">{% csrf_token %}
+  <div class="glass order-top">
+    <div class="field"><label for="guests">Number of guests</label><input type="number" id="guests" name="guests" min="1" value="1" required></div>
+    <div class="field"><label for="event_date">Event date</label><input type="date" id="event_date" name="event_date" min="{{ today }}" value="{{ today }}" required></div>
+    <div class="field grow"><label for="note">Note for the restaurant</label><input type="text" id="note" name="note" maxlength="500" placeholder="Optional"></div>
+  </div>
+  <p class="muted">Set how many units each guest gets. We multiply by the number of guests and check it against stock.</p>
+  <div class="grid">
+  {% for f in foods %}
+    <article class="card glass food" data-price="{{ f.price }}" data-stock="{{ f.quantity }}">
+      <div class="thumb">{% if f.image %}<img src="{{ f.image.url }}" alt="{{ f.name }}">{% else %}<span>{{ f.name|slice:":1" }}</span>{% endif %}</div>
+      <div class="card-body">
+        <h4>{{ f.name }}</h4>
+        <p class="muted">{{ f.description }}</p>
+        <div class="meta"><span class="badge q-{{ f.quality }}">{{ f.get_quality_display }}</span><span class="price">&#2547;{{ f.price }}</span></div>
+        <div class="meta"><span class="stock">{{ f.quantity }} in stock</span></div>
+        <div class="field"><label for="pp_{{ f.id }}">Per person</label>
+          <input type="number" id="pp_{{ f.id }}" name="pp_{{ f.id }}" min="0" value="0" class="pp"></div>
+        <small class="err warn" hidden>Not enough stock for this many guests.</small>
+        <div class="line muted">Line total: &#2547;<span class="lt">0.00</span></div>
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+  <div class="glass totalbar">
+    <div>Total for <b id="gcount">1</b> guests: <b class="big">&#2547;<span id="grand">0.00</span></b></div>
+    <button class="btn" id="submitBtn">Send order request</button>
+  </div>
+</form>
+{% else %}<p class="empty">This restaurant has no stock right now.</p>{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const form=document.getElementById('orderForm'); if(!form) return;
+  const guests=document.getElementById('guests'), grand=document.getElementById('grand'),
+        gcount=document.getElementById('gcount'), btn=document.getElementById('submitBtn');
+  function calc(){
+    const g=Math.max(parseInt(guests.value)||0,0); let total=0, bad=false;
+    document.querySelectorAll('.food').forEach(card=>{
+      const pp=Math.max(parseInt(card.querySelector('.pp').value)||0,0);
+      const price=parseFloat(card.dataset.price), stock=parseInt(card.dataset.stock);
+      const need=pp*g, lt=need*price; total+=lt;
+      card.querySelector('.lt').textContent=lt.toFixed(2);
+      const over=need>stock; card.querySelector('.warn').hidden=!over; if(over) bad=true;
+    });
+    grand.textContent=total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    gcount.textContent=g; btn.disabled=bad||total<=0||g<1;
+  }
+  form.addEventListener('input',calc); calc();
+})();
+</script>
+{% endblock %}

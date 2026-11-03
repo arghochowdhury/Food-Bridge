@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Find restaurants{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2>Find restaurants with stock</h2>
+  <p class="muted">We start from your hall's location. Narrow or widen it with the menus below.</p></div></div>
+<form method="get" class="glass filter">
+  {% include "_location.html" %}
+  <button class="btn">Show restaurants</button>
+</form>
+
+<h3>Closest matches</h3>
+{% if restaurants %}
+<div class="grid">
+{% for r in restaurants %}
+  <article class="card glass"><div class="card-body">
+    <h4>{{ r.name }}</h4>
+    <p class="muted">{{ r.location_text }}</p>
+    <div class="meta"><span class="stock">{{ r.stock_items }} items in stock</span></div>
+    <a class="btn small" href="{% url 'place_order' r.pk %}">See menu and order</a>
+  </div></article>
+{% endfor %}
+</div>
+{% else %}<p class="empty">No restaurant with stock matches this area. Try choosing a wider area, such as only the district.</p>{% endif %}
+
+{% if nearby %}
+<h3>Also in the same district</h3>
+<div class="grid">
+{% for r in nearby %}
+  <article class="card glass"><div class="card-body">
+    <h4>{{ r.name }}</h4><p class="muted">{{ r.location_text }}</p>
+    <div class="meta"><span class="stock">{{ r.stock_items }} items in stock</span></div>
+    <a class="btn ghost small" href="{% url 'place_order' r.pk %}">See menu and order</a>
+  </div></article>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Join{% endblock %}
+{% block content %}
+<div class="auth wide glass">
+  <h2>Join Food Bridge</h2>
+  <form method="post">{% csrf_token %}
+    {% if form.non_field_errors %}{% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}{% endif %}
+    <div class="two">
+      {% include "_field.html" with field=form.role %}
+      {% include "_field.html" with field=form.org_name %}
+      {% include "_field.html" with field=form.username %}
+      {% include "_field.html" with field=form.email %}
+      {% include "_field.html" with field=form.phone %}
+      <span></span>
+      {% include "_field.html" with field=form.password1 %}
+      {% include "_field.html" with field=form.password2 %}
+    </div>
+    <h4>Where are you?</h4>
+    {% include "_location.html" with loc_required=True %}
+    {% for e in form.division.errors %}<small class="err">{{ e }}</small>{% endfor %}
+    {% for e in form.district.errors %}<small class="err">{{ e }}</small>{% endfor %}
+    {% for e in form.upazila.errors %}<small class="err">{{ e }}</small>{% endfor %}
+    {% for e in form.thana.errors %}<small class="err">{{ e }}</small>{% endfor %}
+    {% for e in form.post_office.errors %}<small class="err">{{ e }}</small>{% endfor %}
+    {% include "_field.html" with field=form.address %}
+    <button class="btn block">Create account</button>
+  </form>
+  <p class="muted">Already registered? <a href="{% url 'login' %}">Log in</a></p>
+</div>
+{% endblock %}
+{% block scripts %}{% endblock %}

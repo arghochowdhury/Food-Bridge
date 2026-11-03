@@ -1,0 +1,17 @@
+{% if orders %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Order</th><th>{% if user.role == 'restaurant' %}Hall{% else %}Restaurant{% endif %}</th><th>Guests</th><th>Event date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+    <tr>
+      <td>#{{ o.pk }}</td>
+      <td>{% if user.role == 'restaurant' %}{{ o.hall.name }}{% else %}{{ o.restaurant.name }}{% endif %}</td>
+      <td>{{ o.guests }}</td><td>{{ o.event_date|date:"d M Y" }}</td>
+      <td>&#2547;{{ o.total|floatformat:2 }}</td>
+      <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+      <td><a class="btn ghost small" href="{% url 'order_detail' o.pk %}">Open</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="empty">No orders yet.</p>{% endif %}
