@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Trade license{% endblock %}
+{% block content %}
+<div class="auth glass">
+  <h2>Trade license</h2>
+  {% if restaurant.verification_note %}<div class="msg error">{{ restaurant.verification_note }}</div>{% endif %}
+  <p class="muted">Enter the number exactly as printed on your trade license. You can check it on the
+    <a href="https://etradelicense.gov.bd" target="_blank" rel="noopener">e-Trade License portal</a>.
+    After you submit, our team reviews it again.</p>
+  <form method="post">{% csrf_token %}
+    {% include "_field.html" with field=form.trade_license_no %}
+    <button class="btn block">Submit for review</button>
+    <a class="btn ghost block" href="{% url 'restaurant_dashboard' %}">Back</a>
+  </form>
+</div>
+{% endblock %}

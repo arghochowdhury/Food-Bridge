@@ -5,6 +5,19 @@
   <div><h2>{{ restaurant.name }}</h2><p class="muted">{{ restaurant.location_text }}</p></div>
   <a class="btn" href="{% url 'food_add' %}">Add food item</a>
 </div>
+
+{% if restaurant.verification_status == 'verified' %}
+  <div class="banner verified"><b>License verified.</b> <span class="muted">{{ restaurant.trade_license_no }}</span></div>
+{% elif restaurant.verification_status == 'rejected' %}
+  <div class="banner rejected"><b>License could not be verified.</b>
+    {{ restaurant.verification_note }} <a href="{% url 'restaurant_license' %}">Re-enter your license number</a></div>
+{% else %}
+  <div class="banner pending"><b>License under review.</b>
+    {% if restaurant.trade_license_no %}<span class="muted">{{ restaurant.trade_license_no }}</span>{% endif %}
+    You can add food items and appear in hall searches as soon as it is verified.
+    <a href="{% url 'restaurant_license' %}">{% if restaurant.trade_license_no %}Change number{% else %}Add license number{% endif %}</a></div>
+{% endif %}
+
 <div class="stats-row">
   <div class="glass stat"><b>{{ n_items }}</b><span>items on menu</span></div>
   <div class="glass stat"><b>{{ n_pending }}</b><span>orders waiting for you</span></div>
@@ -15,15 +28,19 @@
 {% if items %}
 <div class="grid">
   {% for f in items %}
-  <article class="card glass {% if not f.is_active %}off{% endif %}">
+  <article class="card glass {% if not f.is_active %}off{% endif %} {% if f.is_expired %}expired{% endif %}">
     <div class="thumb">{% if f.image %}<img src="{{ f.image.url }}" alt="{{ f.name }}">{% else %}<span>{{ f.name|slice:":1" }}</span>{% endif %}</div>
     <div class="card-body">
       <h4>{{ f.name }}</h4>
       <p class="muted">{{ f.description|default:"No description" }}</p>
       <div class="meta"><span class="badge q-{{ f.quality }}">{{ f.get_quality_display }}</span>
         <span class="price">&#2547;{{ f.price }}</span></div>
-      <div class="meta"><span class="stock {% if f.quantity < 10 %}low{% endif %}">{{ f.quantity }} in stock</span>
+      <div class="meta"><span class="stock {% if f.effective_quantity < 10 %}low{% endif %}">{{ f.effective_quantity }} in stock</span>
         {% if not f.is_active %}<span class="muted">Hidden</span>{% endif %}</div>
+      {% if f.available_until %}
+      <div class="meta"><span class="countdown" data-end="{{ f.available_until|date:'c' }}">{% if f.is_expired %}Time over{% endif %}</span>
+        {% if f.is_expired %}<span class="muted">Edit to restart</span>{% endif %}</div>
+      {% endif %}
       <div class="meta">
         <a class="btn ghost small" href="{% url 'food_edit' f.pk %}">Edit</a>
         <form method="post" action="{% url 'food_delete' f.pk %}" onsubmit="return confirm('Delete {{ f.name|escapejs }}?')">{% csrf_token %}<button class="btn danger small">Delete</button></form>

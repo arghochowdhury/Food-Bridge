@@ -20,6 +20,7 @@
         <p class="muted">{{ f.description }}</p>
         <div class="meta"><span class="badge q-{{ f.quality }}">{{ f.get_quality_display }}</span><span class="price">&#2547;{{ f.price }}</span></div>
         <div class="meta"><span class="stock">{{ f.quantity }} in stock</span></div>
+        {% if f.available_until %}<div class="meta"><span class="countdown" data-end="{{ f.available_until|date:'c' }}"></span></div>{% endif %}
         <div class="field"><label for="pp_{{ f.id }}">Per person</label>
           <input type="number" id="pp_{{ f.id }}" name="pp_{{ f.id }}" min="0" value="0" class="pp"></div>
         <small class="err warn" hidden>Not enough stock for this many guests.</small>
@@ -53,6 +54,12 @@
     grand.textContent=total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     gcount.textContent=g; btn.disabled=bad||total<=0||g<1;
   }
+  function closeCard(card){
+    card.classList.add('closed');
+    const i=card.querySelector('.pp'); i.value=0; i.disabled=true;
+  }
+  document.addEventListener('countdown:end',e=>{ const c=e.target.closest('.food'); if(c){ closeCard(c); calc(); } });
+  document.querySelectorAll('.food .countdown.ended').forEach(el=>closeCard(el.closest('.food')));
   form.addEventListener('input',calc); calc();
 })();
 </script>

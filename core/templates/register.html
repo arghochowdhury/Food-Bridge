@@ -15,6 +15,12 @@
       {% include "_field.html" with field=form.password1 %}
       {% include "_field.html" with field=form.password2 %}
     </div>
+    <div id="license-box">
+      {% include "_field.html" with field=form.trade_license_no %}
+      <p class="muted hint">Enter the number printed on your trade license. You can look it up on the
+        <a href="https://etradelicense.gov.bd" target="_blank" rel="noopener">e-Trade License portal</a>.
+        Our team checks every number before your restaurant goes live.</p>
+    </div>
     <h4>Where are you?</h4>
     {% include "_location.html" with loc_required=True %}
     {% for e in form.division.errors %}<small class="err">{{ e }}</small>{% endfor %}
@@ -28,4 +34,14 @@
   <p class="muted">Already registered? <a href="{% url 'login' %}">Log in</a></p>
 </div>
 {% endblock %}
-{% block scripts %}{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const role=document.getElementById('id_role'), box=document.getElementById('license-box'),
+        input=document.getElementById('id_trade_license_no');
+  if(!role||!box||!input) return;
+  function sync(){ const on=role.value==='restaurant'; box.hidden=!on; input.required=on; }
+  role.addEventListener('change',sync); sync();
+})();
+</script>
+{% endblock %}

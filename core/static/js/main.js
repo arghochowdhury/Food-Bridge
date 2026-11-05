@@ -82,3 +82,36 @@
   const div = el.division, pre = div.dataset.selected; div.dataset.selected = '';
   if (pre) { div.value = pre; if (div.value) load(1, div.value); }
 })();
+
+
+/* availability countdowns: <span class="countdown" data-end="ISO time"> */
+(function () {
+  const els = [...document.querySelectorAll('.countdown[data-end]')];
+  if (!els.length) return;
+  const meta = document.querySelector('meta[name="server-now"]');
+  const offset = meta ? new Date(meta.content).getTime() - Date.now() : 0;   // follow the server clock
+  const pad = n => String(n).padStart(2, '0');
+  function fmt(ms) {
+    const s = Math.floor(ms / 1000), d = Math.floor(s / 86400);
+    return (d ? d + 'd ' : '') + pad(Math.floor(s % 86400 / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+  }
+  document.addEventListener('countdown:end', e => {
+    const card = e.target.closest('.card'); if (card) card.classList.add('expired');
+  });
+  function tick() {
+    const now = Date.now() + offset;
+    els.forEach(el => {
+      if (el.classList.contains('ended')) return;
+      const left = new Date(el.dataset.end).getTime() - now;
+      if (isNaN(left)) return;
+      if (left <= 0) {
+        el.textContent = 'Time over'; el.classList.add('ended'); el.classList.remove('urgent');
+        el.dispatchEvent(new CustomEvent('countdown:end', { bubbles: true }));
+        return;
+      }
+      el.textContent = 'Ends in ' + fmt(left);
+      el.classList.toggle('urgent', left < 3600000);
+    });
+  }
+  tick(); setInterval(tick, 1000);
+})();

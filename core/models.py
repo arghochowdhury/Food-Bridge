@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -96,8 +98,20 @@ class Restaurant(LocationMixin):
     phone = models.CharField(max_length=20, blank=True)
     description = models.TextField(blank=True)
 
+    # Trade license verification (checked manually by an admin against the e-Trade License portal)
+    PENDING, VERIFIED, REJECTED = "pending", "verified", "rejected"
+    VERIFICATION_CHOICES = [(PENDING, "Pending review"), (VERIFIED, "Verified"), (REJECTED, "Rejected")]
+    trade_license_no = models.CharField(max_length=40, unique=True, null=True, blank=True)
+    verification_status = models.CharField(max_length=10, choices=VERIFICATION_CHOICES, default=PENDING)
+    verification_note = models.CharField(max_length=255, blank=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return self.name
+
+    @property
+    def is_verified(self):
+        return self.verification_status == self.VERIFIED
 
 
 class ConventionHall(LocationMixin):
@@ -110,6 +124,13 @@ class ConventionHall(LocationMixin):
 
 
 # ---------- Food ----------
+class FoodItemQuerySet(models.QuerySet):
+    def available(self):
+        """Active items with stock whose availability timer has not run out."""
+        return self.filter(is_active=True, quantity__gt=0).filter(
+            Q(available_until__isnull=True) | Q(available_until__gt=timezone.now()))
+
+
 class FoodItem(models.Model):
     QUALITY_CHOICES = [("premium", "Premium"), ("standard", "Standard"), ("economy", "Economy")]
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="items")
@@ -120,13 +141,29 @@ class FoodItem(models.Model):
     quantity = models.PositiveIntegerField(default=0, help_text="Units currently in stock")
     image = models.ImageField(upload_to="foods/", blank=True)
     is_active = models.BooleanField(default=True, help_text="Show this item to customers")
+    available_until = models.DateTimeField(null=True, blank=True,
+                                           help_text="After this time the item's availability becomes zero")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = FoodItemQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.name} ({self.restaurant.name})"
+
+    @property
+    def is_expired(self):
+        return self.available_until is not None and self.available_until <= timezone.now()
+
+    @property
+    def is_available(self):
+        return self.is_active and self.quantity > 0 and not self.is_expired
+
+    @property
+    def effective_quantity(self):
+        return 0 if self.is_expired else self.quantity
 
 
 # ---------- Orders ----------

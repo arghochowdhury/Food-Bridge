@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="server-now" content="{% now 'c' %}">
 <title>{% block title %}Food Bridge{% endblock %} | Food Bridge</title>
 <script>document.documentElement.dataset.theme=localStorage.getItem('fb-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,8 +16,8 @@
 
 <header class="nav">
   <a class="brand" href="{% url 'home' %}">
-    <svg class="logo" viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><stop offset="0" stop-color="#8b1e2d"/><stop offset="1" stop-color="#d4a84b"/>
-      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" 
+    <svg class="logo" viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FB923C"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs>
       <rect width="48" height="48" rx="14" fill="url(#lg)"/>
       <path d="M6 32 Q24 8 42 32" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
       <path d="M5 32 H43" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>

@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
-from .forms import LEVELS, FoodItemForm, RegisterForm
+from .forms import LEVELS, FoodItemForm, LicenseForm, RegisterForm
 from .models import (ConventionHall, District, Division, FoodItem, Notification, Order,
                      OrderItem, PostOffice, Restaurant, Thana, Upazila, User)
 from .pdf import build_bill_pdf
@@ -60,7 +60,7 @@ def clean_selection(source, defaults=None):
 
 # ---------------- public pages ----------------
 def home(request):
-    ctx = {"n_restaurants": Restaurant.objects.count(), "n_halls": ConventionHall.objects.count(),
+    ctx = {"n_restaurants": Restaurant.objects.filter(verification_status=Restaurant.VERIFIED).count(), "n_halls": ConventionHall.objects.count(),
            "n_orders": Order.objects.filter(status=Order.CONFIRMED).count()}
     return render(request, "home.html", ctx)
 
@@ -72,7 +72,11 @@ def register(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        messages.success(request, "Welcome to Food Bridge! Your account is ready.")
+        if user.role == User.RESTAURANT:
+            messages.info(request, "Welcome to Food Bridge! Your trade license is now under review. "
+                                   "You can add food items as soon as it is verified.")
+        else:
+            messages.success(request, "Welcome to Food Bridge! Your account is ready.")
         return redirect("dashboard")
     sel = clean_selection(request.POST if request.method == "POST" else None)
     return render(request, "register.html", {"form": form, "divisions": Division.objects.all(), "sel": sel})
@@ -113,6 +117,9 @@ def restaurant_dashboard(request):
 
 @role_required(User.RESTAURANT)
 def food_add(request):
+    if not request.profile.is_verified:
+        messages.error(request, "Your trade license must be verified before you can add food items.")
+        return redirect("restaurant_dashboard")
     form = FoodItemForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         item = form.save(commit=False)
@@ -141,6 +148,24 @@ def food_delete(request, pk):
     item.delete()
     messages.success(request, "Food item deleted.")
     return redirect("restaurant_dashboard")
+
+
+@role_required(User.RESTAURANT)
+def restaurant_license(request):
+    r = request.profile
+    if r.is_verified:
+        messages.info(request, "Your trade license is already verified.")
+        return redirect("restaurant_dashboard")
+    form = LicenseForm(request.POST or None, restaurant=r, initial={"trade_license_no": r.trade_license_no})
+    if request.method == "POST" and form.is_valid():
+        r.trade_license_no = form.cleaned_data["trade_license_no"]
+        r.verification_status = Restaurant.PENDING
+        r.verification_note = ""
+        r.verified_at = None
+        r.save()
+        messages.success(request, "License number submitted. We will review it shortly.")
+        return redirect("restaurant_dashboard")
+    return render(request, "license_form.html", {"form": form, "restaurant": r})
 
 
 @role_required(User.RESTAURANT)
@@ -201,8 +226,10 @@ def find_restaurants(request):
     has_query = any(request.GET.get(l) for l in LEVELS)
     sel = clean_selection(request.GET if has_query else None, defaults=hall)
 
-    base = Restaurant.objects.annotate(
-        stock_items=Count("items", filter=Q(items__quantity__gt=0, items__is_active=True))
+    avail = (Q(items__is_active=True, items__quantity__gt=0)
+             & (Q(items__available_until__isnull=True) | Q(items__available_until__gt=timezone.now())))
+    base = Restaurant.objects.filter(verification_status=Restaurant.VERIFIED).annotate(
+        stock_items=Count("items", filter=avail)
     ).filter(stock_items__gt=0).select_related("post_office", "thana", "upazila", "district", "division")
 
     qs = base
@@ -220,8 +247,7 @@ def find_restaurants(request):
 
 @role_required(User.HALL)
 def place_order(request, pk):
-    restaurant = get_object_or_404(Restaurant, pk=pk)
-    foods = restaurant.items.filter(is_active=True, quantity__gt=0)
+    restaurant = get_object_or_404(Restaurant, pk=pk, verification_status=Restaurant.VERIFIED)
 
     if request.method == "POST":
         errors, lines = [], []
@@ -234,17 +260,21 @@ def place_order(request, pk):
             errors.append("Enter the number of guests (at least 1).")
         if not event_date or event_date < timezone.localdate():
             errors.append("Choose an event date that is today or later.")
-        for f in foods:
+        # Re-check availability on the server: a countdown that ended means the item cannot be ordered.
+        for f in restaurant.items.filter(is_active=True):
             try:
                 per_person = int(request.POST.get(f"pp_{f.id}") or 0)
             except ValueError:
                 per_person = 0
             if per_person > 0 and guests > 0:
+                if not f.is_available:
+                    errors.append(f"{f.name}: its availability time is over or it is out of stock, so it cannot be ordered.")
+                    continue
                 need = per_person * guests
                 if need > f.quantity:
                     errors.append(f"{f.name}: you need {need} but only {f.quantity} are in stock.")
                 lines.append((f, per_person, need))
-        if not lines:
+        if not lines and not errors:
             errors.append("Select at least one food item.")
         if not errors:
             with transaction.atomic():
@@ -265,6 +295,7 @@ def place_order(request, pk):
         for e in errors:
             messages.error(request, e)
 
+    foods = restaurant.items.available()
     return render(request, "place_order.html", {"restaurant": restaurant, "foods": foods,
                                                 "today": timezone.localdate().isoformat()})
 

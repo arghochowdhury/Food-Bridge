@@ -4,11 +4,23 @@
 <div class="auth glass">
   <h2>{{ title }}</h2>
   <form method="post" enctype="multipart/form-data">{% csrf_token %}
-    {% for field in form %}
-      {% if field.name == 'is_active' %}
-        <label class="check">{{ field }} {{ field.label }}</label>
-      {% else %}{% include "_field.html" with field=field %}{% endif %}
-    {% endfor %}
+    {% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+    {% include "_field.html" with field=form.name %}
+    {% include "_field.html" with field=form.description %}
+    {% include "_field.html" with field=form.quality %}
+    {% include "_field.html" with field=form.price %}
+    {% include "_field.html" with field=form.quantity %}
+    {% include "_field.html" with field=form.image %}
+
+    <div class="timer-box">
+      <h4>Availability timer (optional)</h4>
+      <p class="muted">When the time ends, this item's availability drops to zero automatically and halls can no longer order it.
+        Set an end date and time, or a number of hours from now. Leave both empty for no time limit.</p>
+      {% include "_field.html" with field=form.available_until %}
+      {% include "_field.html" with field=form.duration_hours %}
+    </div>
+
+    <label class="check">{{ form.is_active }} {{ form.is_active.label }}</label>
     <button class="btn block">Save food item</button>
     <a class="btn ghost block" href="{% url 'restaurant_dashboard' %}">Cancel</a>
   </form>
